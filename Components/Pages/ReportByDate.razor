@@ -1,0 +1,215 @@
+﻿@page "/report-by-date"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using VillageRentals.CSFiles
+
+<h3>Report by Date</h3>
+
+<div class="form-group">
+    <label>Start Date:</label>
+    <input type="date" class="form-control" @bind="StartDate" min="2020-01-01" />
+</div>
+<div class="form-group">
+    <label>End Date:</label>
+    <input type="date" class="form-control" @bind="EndDate" min="@StartDate.ToString("yyyy-MM-dd")" />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="GenerateReport">Generate</button>
+</div>
+
+@if (FilteredOrders.Any())
+{
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>Order Rental Date</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Equipment</th>
+                <th>Total Fee</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in FilteredOrders)
+            {
+                var customer = DataStore.Customers.FirstOrDefault(c => c.CustomerID == order.CustomerID);
+                var equipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == order.EquipmentID);
+                <tr>
+                    <td>@order.OrderRentalDate.ToString("yyyy-MM-dd")</td>
+                    <td>@order.OrderID</td>
+                    <td>@(customer != null ? $"{customer.CustomerID} {customer.CustomerFirstName} {customer.CustomerLastName}" : "Unknown")</td>
+                    <td>@(equipment != null ? $"{equipment.EquipmentID} {equipment.EquipmentName}" : "Unknown")</td>
+                    <td>@($"{order.TotalFee:F2} UCD")</td>
+                    <td class="@(order.OrderIsClosed ? "status-closed" : "status-active")">
+                        @(order.OrderIsClosed ? "Closed" : "Active")
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (IsGenerated)
+{
+    <p class="error-message">No orders found in the selected date range.</p>
+}
+
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="SaveAsCsv" disabled="@(!FilteredOrders.Any())">Save as...</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<Order> AllOrders = new List<Order>();
+    private List<Order> FilteredOrders = new List<Order>();
+    private DateTime StartDate { get; set; } = DateTime.Today.AddDays(-7); // 默认值：过去7天
+    private DateTime EndDate { get; set; } = DateTime.Today; // 默认值：今天
+    private bool IsGenerated { get; set; } = false;
+    private string Message { get; set; } = string.Empty;
+    private string MessageClass { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Load all orders
+        AllOrders = DataStore.Orders;
+    }
+
+    private void GenerateReport()
+    {
+        // Validate dates
+        if (StartDate > EndDate)
+        {
+            Message = "End Date cannot be earlier than Start Date.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Filter orders by OrderRentalDate within the selected date range
+        FilteredOrders = AllOrders
+            .Where(o => o.OrderRentalDate.Date >= StartDate.Date && o.OrderRentalDate.Date <= EndDate.Date)
+            .OrderBy(o => o.OrderRentalDate)
+            .ToList();
+
+        IsGenerated = true;
+        Message = string.Empty; // Clear any previous message
+    }
+
+    private async Task SaveAsCsv()
+    {
+        if (!FilteredOrders.Any())
+        {
+            Message = "No data to export.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        try
+        {
+            // Generate CSV content
+            var csvLines = new List<string>
+            {
+                "Order Rental Date,Order ID,Customer,Equipment,Total Fee,Status" // CSV header
+            };
+
+            foreach (var order in FilteredOrders)
+            {
+                var customer = DataStore.Customers.FirstOrDefault(c => c.CustomerID == order.CustomerID);
+                var equipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == order.EquipmentID);
+                var customerName = customer != null ? $"{customer.CustomerID} {customer.CustomerFirstName} {customer.CustomerLastName}" : "Unknown";
+                var equipmentName = equipment != null ? $"{equipment.EquipmentID} {equipment.EquipmentName}" : "Unknown";
+                var status = order.OrderIsClosed ? "Closed" : "Active";
+                var line = $"{order.OrderRentalDate:yyyy-MM-dd},{order.OrderID},{customerName},{equipmentName},{order.TotalFee:F2} UCD,{status}";
+                csvLines.Add(line);
+            }
+
+            var csvContent = string.Join("\n", csvLines);
+            var fileName = $"ReportByDate_{StartDate:yyyy-MM-dd}_to_{EndDate:yyyy-MM-dd}.csv";
+
+            // Call JavaScript to save the file
+            await JSRuntime.InvokeVoidAsync("saveFile", csvContent, fileName);
+
+            // Show success message
+            Message = $"Report saved to Downloads as {fileName}";
+            MessageClass = "success-message";
+        }
+        catch (Exception ex)
+        {
+            // Log the error for debugging
+            Console.WriteLine($"Error saving CSV: {ex.Message}");
+            Message = "Failed to save the report. Please try again.";
+            MessageClass = "error-message";
+        }
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+        .report-table th, .report-table td {
+            border: 1px solid #ccc;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .report-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+    .status-active {
+        color: green;
+    }
+
+    .status-closed {
+        color: red;
+    }
+</style>

@@ -1,0 +1,245 @@
+﻿@page "/add-equipment"
+@using VillageRentals.CSFiles
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+
+<h3>Add Equipment</h3>
+
+<div class="form-group">
+    <label>Equipment Category:</label>
+    <select class="form-control" @bind="Equipment.CategoryID" @bind:after="OnCategoryChanged">
+        <option value="0">Select a category...</option>
+        @foreach (var category in Categories)
+        {
+            <option value="@category.EquipmentCategoryID">@category.EquipmentCategoryID @category.EquipmentCategoryName</option>
+        }
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment ID:</label>
+    <input type="text" class="form-control" value="@GetEquipmentIDDisplay()" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Name:</label>
+    <input type="text" class="form-control" @bind="Equipment.EquipmentName" />
+</div>
+<div class="form-group">
+    <label>Equipment Description:</label>
+    <textarea class="form-control" @bind="Equipment.EquipmentDescription" rows="3"></textarea>
+</div>
+<div class="form-group">
+    <label>Equipment Daily Rate: (UCD/Day)</label>
+    <input type="number" class="form-control" @bind="Equipment.EquipmentDailyRate" step="0.01" />
+</div>
+<div class="form-group">
+    <label>Equipment Condition:</label>
+    <input type="text" class="form-control" @bind="Equipment.EquipmentCondition" />
+</div>
+<div class="form-group">
+    <label>Equipment is in Inventory:</label>
+    <select class="form-control" value="@(Equipment.EquipmentIsInInventory ? "Y" : "N")" @onchange="OnInventoryChanged">
+        <option value="Y">Y</option>
+        <option value="N">N</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment is Available:</label>
+    <select class="form-control" value="@(Equipment.EquipmentIsAvailable ? "Y" : "N")" @onchange="OnAvailableChanged">
+        <option value="Y">Y</option>
+        <option value="N">N</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment Working Parts:</label>
+    <textarea class="form-control" @bind="Equipment.EquipmentWorkingParts" rows="3"></textarea>
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="SaveEquipment">Save</button>
+    <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private EquipmentUI Equipment = new EquipmentUI();
+    private List<EquipmentCategory> Categories = new List<EquipmentCategory>();
+    private string Message = string.Empty;
+    private string MessageClass = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Load categories from DataStore
+        Categories = DataStore.EquipmentCategories;
+
+        // Set default values
+        Equipment.EquipmentIsInInventory = true;
+        Equipment.EquipmentIsAvailable = true;
+    }
+
+    private string GetEquipmentIDDisplay()
+    {
+        return Equipment.CategoryID == 0 ? "" : Equipment.EquipmentID.ToString();
+    }
+
+    private void OnCategoryChanged()
+    {
+        if (Equipment.CategoryID != 0)
+        {
+            // Update EquipmentID based on selected category
+            Equipment.EquipmentID = JsonService.GetNextEquipmentID(Equipment.CategoryID);
+        }
+        else
+        {
+            Equipment.EquipmentID = 0;
+        }
+    }
+
+    private void OnInventoryChanged(ChangeEventArgs e)
+    {
+        Equipment.EquipmentIsInInventory = e.Value.ToString() == "Y";
+    }
+
+    private void OnAvailableChanged(ChangeEventArgs e)
+    {
+        Equipment.EquipmentIsAvailable = e.Value.ToString() == "Y";
+    }
+
+    private void SaveEquipment()
+    {
+        if (Equipment.CategoryID == 0)
+        {
+            Message = "Please select a category.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Equipment.EquipmentName))
+        {
+            Message = "Please enter an equipment name.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Equipment.EquipmentDescription))
+        {
+            Message = "Please enter an equipment description.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (Equipment.EquipmentDailyRate <= 0)
+        {
+            Message = "Please enter a valid daily rate.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Equipment.EquipmentCondition))
+        {
+            Message = "Please enter the equipment condition.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Equipment.EquipmentWorkingParts))
+        {
+            Message = "Please enter the equipment working parts.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Save to JSON
+        var newEquipment = new Equipment(
+            Equipment.EquipmentID,
+            Equipment.CategoryID,
+            Equipment.EquipmentName,
+            Equipment.EquipmentDescription,
+            Equipment.EquipmentDailyRate,
+            Equipment.EquipmentCondition,
+            Equipment.EquipmentIsInInventory,
+            Equipment.EquipmentIsAvailable,
+            Equipment.EquipmentWorkingParts
+        );
+        JsonService.AddEquipment(newEquipment);
+
+        // Show success message
+        Message = "Equipment added successfully!";
+        MessageClass = "success-message";
+
+        // Reset the form for the next entry
+        Equipment = new EquipmentUI
+            {
+                EquipmentIsInInventory = true,
+                EquipmentIsAvailable = true
+            };
+        Equipment.EquipmentID = JsonService.GetNextEquipmentID(Equipment.CategoryID);
+    }
+
+    private void Cancel()
+    {
+        // Reset the form
+        Equipment = new EquipmentUI
+            {
+                EquipmentIsInInventory = true,
+                EquipmentIsAvailable = true
+            };
+        Message = string.Empty;
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>

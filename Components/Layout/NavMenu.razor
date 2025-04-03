@@ -1,0 +1,220 @@
+﻿@using VillageRentals.CSFiles
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/" @onclick="Logout">Village Rentals</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        @if (!AuthState.IsLoggedIn)
+        {
+            <!-- Before login -->
+            <div class="nav-item">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    Login Options
+                </NavLink>
+            </div>
+        }
+        else if (AuthState.Role == "Admin")
+        {
+            <!-- Admin menu -->
+            <!-- Equipment Management -->
+            <div class="nav-item">
+                <span class="nav-title">Equipment Management</span>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="add-equipment-category">
+                    Add Equipment Category
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="update-equipment-category">
+                    Update Equipment Category
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="add-equipment">
+                    Add Equipment
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="remove-equipment">
+                    Remove Equipment
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="update-equipment">
+                    Update Equipment
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="search-equipment">
+                    Search for Equipment
+                </NavLink>
+            </div>
+
+            <!-- Customer Management -->
+            <div class="nav-item">
+                <span class="nav-title">Customer Management</span>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="add-customer">
+                    Add Customer
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="remove-customer">
+                    Remove Customer
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="update-customer">
+                    Update Customer
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="search-customer">
+                    Search for Customer
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="ban-customer">
+                    Ban Customer
+                </NavLink>
+            </div>
+
+            <!-- Order Management -->
+            <div class="nav-item">
+                <span class="nav-title">Order Management</span>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="close-order">
+                    Close Order
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="search-order">
+                    Search for Order
+                </NavLink>
+            </div>
+
+            <!-- Report Management -->
+            <div class="nav-item">
+                <span class="nav-title">Report Management</span>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="report-by-date">
+                    Report by Date
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="report-by-customer">
+                    Report by Customer
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="report-by-category">
+                    Report by Category
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="customize-report">
+                    Customize Report
+                </NavLink>
+            </div>
+        }
+        else if (AuthState.Role == "Customer")
+        {
+            <!-- Customer menu -->
+            <div class="nav-item">
+                <span class="nav-title">Order Management</span>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="new-order">
+                    New Order
+                </NavLink>
+            </div>
+            <div class="sub-item">
+                <NavLink class="nav-link" href="my-order">
+                    My Order
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+<style>
+    .navbar {
+        color: white;
+    }
+
+    .nav-scrollable {
+        color: white;
+        height: 100vh; /* Restore height for full viewport */
+        width: 250px; /* Adjusted width to accommodate longer text */
+        overflow-x: hidden; /* Prevent horizontal scrollbar */
+    }
+
+    .nav-item {
+        padding-top: 1.5rem;
+        padding-left: 1rem; /* Keep left padding as specified */
+    }
+
+    .nav-title {
+        color: white;
+        font-size: 16px;
+    }
+
+    .nav-link {
+        color: white !important;
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Show ellipsis for overflow text */
+        text-decoration: none; /* Remove underline by default */
+        background: none !important; /* Remove background */
+        border: none !important; /* Remove border */
+        padding: 0; /* Remove all padding */
+        line-height: 1; /* Set line-height to 1 to match font-size */
+        margin: 0; /* Remove all margins */
+    }
+
+        .nav-link:hover {
+            text-decoration: underline; /* Add underline on hover */
+        }
+
+        .nav-link.active {
+            font-weight: bold; /* Bold font when active */
+        }
+
+    .navbar-brand {
+        color: white !important;
+    }
+
+    .sub-item .nav-link {
+        padding-left: 2rem; /* Indent sub-items */
+        line-height: 24px; /* Set line-height to 1 to match font-size */
+    }
+</style>
+
+@code {
+    private void Logout()
+    {
+        AuthState.Logout();
+    }
+
+    protected override void OnInitialized()
+    {
+        // Check state on component initialization
+        StateHasChanged();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Check state after each render
+        StateHasChanged();
+    }
+}

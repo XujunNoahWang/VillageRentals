@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="VillageRentals.CSFiles.AuthState">
+    <Position X="7.25" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAEAAAAAIAAAAAACAAAAASAAAAAAA=</HashCode>
+      <FileName>CSFiles\AuthState.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.Customer">
+    <Position X="9" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQABBAAAAAAAACAAAAAAEAAAACAAQAAAEAQAAAA=</HashCode>
+      <FileName>CSFiles\Customer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.CustomerManagementUI">
+    <Position X="6.75" Y="1.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQABBAAAAAAAACAAAAAAEAAAACAAQAAAEAQAAAA=</HashCode>
+      <FileName>CSFiles\CustomerManagementUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.DataStore">
+    <Position X="4.25" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhA=</HashCode>
+      <FileName>CSFiles\DataStore.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.Equipment">
+    <Position X="11" Y="3" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIAAAAABACAAIAAAAAAAAAgQAAIAAAAIAAAA=</HashCode>
+      <FileName>CSFiles\Equipment.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.EquipmentCategory">
+    <Position X="11" Y="0.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAACAAAAAAA=</HashCode>
+      <FileName>CSFiles\EquipmentCategory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.EquipmentCategoryUI">
+    <Position X="13.5" Y="0.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAACAAAAAAA=</HashCode>
+      <FileName>CSFiles\EquipmentCategoryUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.EquipmentUI">
+    <Position X="13.5" Y="3" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACIAAAAABACAAIAAAAAAAAAgQAAIAAAAIAAAA=</HashCode>
+      <FileName>CSFiles\EquipmentUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.JsonService">
+    <Position X="2" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAgGAQAAgAAQQAAgUAAQCAAIACAAUABAAAEAAE=</HashCode>
+      <FileName>CSFiles\JsonService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.Order">
+    <Position X="4.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAABAAIQABAAAAAAAAABAAEAAAAAAAAACAEAAAAAA=</HashCode>
+      <FileName>CSFiles\Order.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VillageRentals.CSFiles.OrderUI">
+    <Position X="2.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAABAAIQABAAAAAAAAABAAEAAAAAAAAACAEAAAAAA=</HashCode>
+      <FileName>CSFiles\OrderUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

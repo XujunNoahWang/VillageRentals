@@ -1,0 +1,33 @@
+﻿@page "/admin-login"
+@using VillageRentals.CSFiles
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+
+<h3>Admin Login</h3>
+
+<div class="form-group">
+    <label>Username</label>
+    <input type="text" class="form-control" value="admin" readonly />
+</div>
+<div class="form-group">
+    <label>Password</label>
+    <input type="password" class="form-control" value="123456" readonly />
+</div>
+<a href="/admin-home" class="btn btn-primary" @onclick="SetAdminLogin">Login</a>
+
+<style>
+    .form-group {
+        margin-bottom: 15px;
+        width: 300px;
+    }
+</style>
+
+@code {
+    private void SetAdminLogin()
+    {
+        // Preload all JSON data
+        JsonService.InitializeJsonFile();
+
+        AuthState.Login("Admin");
+    }
+}

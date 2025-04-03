@@ -1,0 +1,88 @@
+﻿@page "/search-equipment"
+@using VillageRentals.CSFiles
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+
+<h3>Search for Equipment</h3>
+
+<div class="form-group">
+    <label>Equipment:</label>
+    <select class="form-control" @bind="SelectedEquipmentID" @bind:after="OnEquipmentChanged">
+        <option value="0">Select an equipment...</option>
+        @foreach (var equipment in Equipments)
+        {
+                <option value="@equipment.EquipmentID">@equipment.EquipmentID @equipment.EquipmentName</option>
+        }
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment Name:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment?.EquipmentName ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Description:</label>
+    <textarea class="form-control" value="@(SelectedEquipment?.EquipmentDescription ?? "")" readonly rows="3"></textarea>
+</div>
+<div class="form-group">
+    <label>Equipment Daily Rate:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentDailyRate} UCD/Day" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Condition:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment?.EquipmentCondition ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment is in Inventory:</label>
+    <select class="form-control" value="@(SelectedEquipment != null && SelectedEquipment.EquipmentIsInInventory ? "Y" : "N")" disabled>
+        <option value="Y">Y</option>
+        <option value="N">N</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment is Available:</label>
+    <select class="form-control" value="@(SelectedEquipment != null && SelectedEquipment.EquipmentIsAvailable ? "Y" : "N")" disabled>
+        <option value="Y">Y</option>
+        <option value="N">N</option>
+    </select>
+</div>
+<div class="form-group">
+    <label>Equipment Working Parts:</label>
+    <textarea class="form-control" value="@(SelectedEquipment?.EquipmentWorkingParts ?? "")" readonly rows="3"></textarea>
+</div>
+
+@code {
+    private List<Equipment> Equipments = new List<Equipment>();
+    private int SelectedEquipmentID { get; set; }
+    private Equipment SelectedEquipment { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Load all equipments
+        Equipments = DataStore.Equipments;
+    }
+
+    private void OnEquipmentChanged()
+    {
+        if (SelectedEquipmentID != 0)
+        {
+            SelectedEquipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == SelectedEquipmentID);
+        }
+        else
+        {
+            SelectedEquipment = null;
+        }
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+</style>

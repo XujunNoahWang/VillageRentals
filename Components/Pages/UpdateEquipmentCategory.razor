@@ -1,0 +1,148 @@
+﻿@page "/update-equipment-category"
+@using VillageRentals.CSFiles
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+
+<h3>Update Equipment Category</h3>
+
+<div class="form-group">
+    <label>Equipment Category:</label>
+    <select class="form-control" @bind="SelectedCategoryID">
+        <option value="0">Select a category...</option>
+        @foreach (var category in Categories)
+        {
+                <option value="@category.EquipmentCategoryID">@category.EquipmentCategoryID @category.EquipmentCategoryName</option>
+        }
+    </select>
+</div>
+<div class="form-group">
+    <label>Update Category Name:</label>
+    <input type="text" class="form-control" @bind="UpdatedCategoryName" />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="UpdateCategory">Update</button>
+    <button class="btn btn-danger" @onclick="CancelUpdate">Cancel</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+        <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<EquipmentCategory> Categories = new List<EquipmentCategory>();
+    private int SelectedCategoryID { get; set; }
+    private string UpdatedCategoryName { get; set; } = string.Empty;
+    private string Message { get; set; } = string.Empty;
+    private string MessageClass { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Load categories from JSON
+        Categories = JsonService.ReadCategories();
+    }
+
+    private void UpdateCategory()
+    {
+        if (SelectedCategoryID == 0)
+        {
+            Message = "Please select a category.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(UpdatedCategoryName))
+        {
+            Message = "Please enter a new category name.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Find the category to update
+        var categoryToUpdate = Categories.FirstOrDefault(c => c.EquipmentCategoryID == SelectedCategoryID);
+        if (categoryToUpdate != null)
+        {
+            // Update the category name
+            categoryToUpdate.EquipmentCategoryName = UpdatedCategoryName;
+
+            // Save to JSON
+            JsonService.AddCategory(categoryToUpdate); // This will overwrite the existing file
+
+            // Refresh the categories list
+            Categories = JsonService.ReadCategories();
+
+            // Show success message
+            Message = "Category updated successfully!";
+            MessageClass = "success-message";
+
+            // Clear the input
+            UpdatedCategoryName = string.Empty;
+        }
+        else
+        {
+            Message = "Category not found.";
+            MessageClass = "error-message";
+        }
+    }
+
+    private void CancelUpdate()
+    {
+        // Clear the input
+        UpdatedCategoryName = string.Empty;
+        Message = string.Empty;
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>

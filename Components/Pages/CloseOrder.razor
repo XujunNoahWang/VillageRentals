@@ -1,0 +1,262 @@
+﻿@page "/close-order"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@using VillageRentals.CSFiles
+
+<h3>Close Order</h3>
+
+<div class="form-group">
+    <label>Order ID:</label>
+    @if (AllOrders.Any())
+    {
+        <select class="form-control" @bind="SelectedOrderID" @bind:after="OnOrderChanged">
+            <option value="0">Select an order...</option>
+            @foreach (var order in AllOrders)
+            {
+                <option value="@order.OrderID">@order.OrderID</option>
+            }
+        </select>
+    }
+    else
+    {
+        <p class="error-message">No orders found.</p>
+    }
+</div>
+<div class="form-group">
+    <label>Equipment:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentID} {SelectedEquipment.EquipmentName}" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Daily Rate:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentDailyRate} UCD/Day" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Place Date:</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? SelectedOrder.OrderPlaceDate.ToString("yyyy-MM-dd") : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Rental Date:</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? SelectedOrder.OrderRentalDate.ToString("yyyy-MM-dd") : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Return Date (Planned):</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? SelectedOrder.OrderReturnDate.ToString("yyyy-MM-dd") : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Return Date (Final):</label>
+    <input type="date" class="form-control" @bind="Order.OrderReturnDateFinal" @bind:after="CalculateTotalFee" min="@Order.OrderRentalDate.ToString("yyyy-MM-dd")" disabled="@(Order.OrderIsClosed)" />
+</div>
+<div class="form-group">
+    <label>Customer Discount:</label>
+    <input type="text" class="form-control" value="@(CustomerDiscount != null ? $"{CustomerDiscount}%" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Total Fee:</label>
+    <input type="text" class="form-control" value="@(Order.TotalFee > 0 ? $"{Order.TotalFee:F2} UCD" : "")" readonly />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="CloseSelectedOrder" disabled="@(SelectedOrderID == 0 || Order.OrderIsClosed)">
+        @(Order.OrderIsClosed ? "Order Closed" : "Close Order")
+    </button>
+    <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<Order> AllOrders = new List<Order>();
+    private int SelectedOrderID { get; set; }
+    private Order SelectedOrder { get; set; }
+    private OrderUI Order { get; set; } = new OrderUI();
+    private Equipment SelectedEquipment { get; set; }
+    private int? CustomerDiscount { get; set; }
+    private string Message { get; set; } = string.Empty;
+    private string MessageClass { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Load all orders
+        AllOrders = DataStore.Orders;
+    }
+
+    private void OnOrderChanged()
+    {
+        if (SelectedOrderID != 0)
+        {
+            SelectedOrder = DataStore.Orders.FirstOrDefault(o => o.OrderID == SelectedOrderID);
+            if (SelectedOrder != null)
+            {
+                SelectedEquipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == SelectedOrder.EquipmentID);
+                var customer = DataStore.Customers.FirstOrDefault(c => c.CustomerID == SelectedOrder.CustomerID);
+                CustomerDiscount = customer?.CustomerDiscount;
+
+                Order = new OrderUI(
+                    SelectedOrder.OrderID,
+                    SelectedOrder.CustomerID,
+                    SelectedOrder.EquipmentID,
+                    SelectedOrder.OrderPlaceDate,
+                    SelectedOrder.OrderRentalDate,
+                    SelectedOrder.OrderReturnDate,
+                    SelectedOrder.OrderReturnDateFinal,
+                    SelectedOrder.TotalFee,
+                    SelectedOrder.OrderIsClosed
+                );
+                CalculateTotalFee();
+            }
+        }
+        else
+        {
+            SelectedOrder = null;
+            SelectedEquipment = null;
+            CustomerDiscount = null;
+            Order = new OrderUI();
+        }
+    }
+
+    private void CalculateTotalFee()
+    {
+        if (SelectedEquipment != null && Order.OrderRentalDate != default)
+        {
+            // Use OrderReturnDateFinal if provided, otherwise use OrderReturnDate
+            DateTime returnDate = Order.OrderReturnDateFinal ?? Order.OrderReturnDate;
+            var days = (returnDate - Order.OrderRentalDate).Days;
+            if (days < 1)
+            {
+                days = 1; // Minimum 1 day
+            }
+
+            // Calculate total fee: Daily Rate * Days * (1 - Discount/100)
+            double discount = CustomerDiscount ?? 0;
+            Order.TotalFee = SelectedEquipment.EquipmentDailyRate * days * (1 - discount / 100.0);
+        }
+        else
+        {
+            Order.TotalFee = 0;
+        }
+    }
+
+    private void CloseSelectedOrder()
+    {
+        if (SelectedOrderID == 0)
+        {
+            Message = "Please select an order to close.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Validate OrderReturnDateFinal
+        if (!Order.OrderReturnDateFinal.HasValue)
+        {
+            Message = "Order Return Date (Final) cannot be empty.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (Order.OrderReturnDateFinal < Order.OrderRentalDate)
+        {
+            Message = "Order Return Date (Final) cannot be earlier than Order Rental Date.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Update the order
+        var updatedOrder = new Order(
+            Order.OrderID,
+            Order.CustomerID,
+            Order.EquipmentID,
+            Order.OrderPlaceDate,
+            Order.OrderRentalDate,
+            Order.OrderReturnDate,
+            Order.OrderReturnDateFinal,
+            Order.TotalFee,
+            true 
+        );
+        JsonService.AddOrder(updatedOrder);
+
+        // Set the equipment as available
+        var equipments = DataStore.Equipments;
+        var equipment = equipments.FirstOrDefault(e => e.EquipmentID == Order.EquipmentID);
+        if (equipment != null)
+        {
+            equipment.EquipmentIsAvailable = true;
+            JsonService.AddEquipment(equipment);
+        }
+
+        // Update the current Order object to reflect the closed state
+        Order.OrderIsClosed = true;
+
+        // Show success message
+        Message = "Order closed successfully!";
+        MessageClass = "success-message";
+
+        // No redirect, stay on the page to show the updated button state
+    }
+
+    private void Cancel()
+    {
+        // Clear the form
+        SelectedOrderID = 0;
+        SelectedOrder = null;
+        SelectedEquipment = null;
+        CustomerDiscount = null;
+        Order = new OrderUI();
+        Message = string.Empty;
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>

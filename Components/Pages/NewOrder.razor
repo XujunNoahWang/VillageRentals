@@ -1,0 +1,241 @@
+﻿@page "/new-order"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@using VillageRentals.CSFiles
+
+<h3>New Order</h3>
+
+<div class="form-group">
+    <label>Equipment:</label>
+    @if (AvailableEquipments.Any())
+    {
+        <select class="form-control" @bind="Order.EquipmentID" @bind:after="OnEquipmentChanged">
+            <option value="0">Select an equipment...</option>
+            @foreach (var equipment in AvailableEquipments)
+            {
+                <option value="@equipment.EquipmentID">@equipment.EquipmentID @equipment.EquipmentName</option>
+            }
+        </select>
+    }
+    else
+    {
+        <p class="error-message">No available equipment to rent at the moment.</p>
+    }
+</div>
+<div class="form-group">
+    <label>Equipment Description:</label>
+    <textarea class="form-control" value="@(SelectedEquipment?.EquipmentDescription ?? "")" readonly rows="3"></textarea>
+</div>
+<div class="form-group">
+    <label>Equipment Daily Rate:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentDailyRate} UCD/Day" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Condition:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment?.EquipmentCondition ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Rental Date:</label>
+    <input type="date" class="form-control" @bind="Order.OrderRentalDate" @bind:after="CalculateTotalFee" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+</div>
+<div class="form-group">
+    <label>Order Return Date (Planned):</label>
+    <input type="date" class="form-control" @bind="Order.OrderReturnDate" @bind:after="CalculateTotalFee" min="@Order.OrderRentalDate.ToString("yyyy-MM-dd")" />
+</div>
+<div class="form-group">
+    <label>Customer Discount:</label>
+    <input type="text" class="form-control" value="@(CustomerDiscount != null ? $"{CustomerDiscount}%" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Total Fee:</label>
+    <input type="text" class="form-control" value="@(Order.TotalFee > 0 ? $"{Order.TotalFee:F2} UCD" : "")" readonly />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="RentEquipment" disabled="@(!AvailableEquipments.Any())">Rent</button>
+    <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<Equipment> AvailableEquipments = new List<Equipment>();
+    private OrderUI Order { get; set; } = new OrderUI();
+    private Equipment SelectedEquipment { get; set; }
+    private int? CustomerDiscount { get; set; }
+    private string Message { get; set; } = string.Empty;
+    private string MessageClass { get; set; } = string.Empty;
+    private int CurrentCustomerID { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Load available equipments (EquipmentIsAvailable = true)
+        AvailableEquipments = DataStore.Equipments
+            .Where(e => e.EquipmentIsAvailable)
+            .ToList();
+
+        // Get the logged-in customer's ID and discount
+        var customers = DataStore.Customers;
+        var customer = customers.FirstOrDefault(c => c.CustomerFirstName == AuthState.CustomerFirstName);
+        if (customer != null)
+        {
+            CurrentCustomerID = customer.CustomerID;
+            Order.CustomerID = customer.CustomerID;
+            CustomerDiscount = customer.CustomerDiscount;
+        }
+    }
+
+    private void OnEquipmentChanged()
+    {
+        if (Order.EquipmentID != 0)
+        {
+            SelectedEquipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == Order.EquipmentID);
+            CalculateTotalFee();
+        }
+        else
+        {
+            SelectedEquipment = null;
+            Order.TotalFee = 0;
+        }
+    }
+
+    private void CalculateTotalFee()
+    {
+        if (SelectedEquipment != null && Order.OrderRentalDate != default && Order.OrderReturnDate != default)
+        {
+            // Calculate the number of days
+            var days = (Order.OrderReturnDate - Order.OrderRentalDate).Days;
+            if (days < 1)
+            {
+                days = 1; // Minimum 1 day
+            }
+
+            // Calculate total fee: Daily Rate * Days * (1 - Discount/100)
+            double discount = CustomerDiscount ?? 0;
+            Order.TotalFee = SelectedEquipment.EquipmentDailyRate * days * (1 - discount / 100.0);
+        }
+        else
+        {
+            Order.TotalFee = 0;
+        }
+    }
+
+    private void RentEquipment()
+    {
+        if (Order.EquipmentID == 0)
+        {
+            Message = "Please select an equipment to rent.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (Order.OrderRentalDate == default || Order.OrderReturnDate == default)
+        {
+            Message = "Please select both rental and return dates.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (Order.OrderReturnDate < Order.OrderRentalDate)
+        {
+            Message = "Return date cannot be earlier than rental date.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Create the order
+        var newOrder = new Order(
+            JsonService.GetNextOrderID(),
+            CurrentCustomerID,
+            Order.EquipmentID,
+            DateTime.Now,
+            Order.OrderRentalDate,
+            Order.OrderReturnDate,
+            null,
+            Order.TotalFee,
+            false 
+        );
+        JsonService.AddOrder(newOrder);
+
+        // Clear the form but preserve CustomerID
+        Order = new OrderUI
+            {
+                CustomerID = CurrentCustomerID
+            };
+        SelectedEquipment = null;
+        AvailableEquipments = DataStore.Equipments
+            .Where(e => e.EquipmentIsAvailable)
+            .ToList();
+
+        // Show success message
+        Message = "Order created successfully!";
+        MessageClass = "success-message";
+    }
+
+    private void Cancel()
+    {
+        // Clear the form but preserve CustomerID
+        Order = new OrderUI
+            {
+                CustomerID = CurrentCustomerID
+            };
+        SelectedEquipment = null;
+        Message = string.Empty;
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>

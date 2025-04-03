@@ -1,0 +1,86 @@
+﻿@page "/add-equipment-category"
+@using VillageRentals.CSFiles
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+
+<h3>Add Equipment Category</h3>
+
+<div class="form-group">
+    <label>Equipment Category ID:</label>
+    <input type="text" class="form-control" value="@Category.EquipmentCategoryID" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Category Name:</label>
+    <input type="text" class="form-control" @bind="Category.EquipmentCategoryName" />
+</div>
+<button class="btn btn-primary" @onclick="SaveCategory">Save</button>
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <p class="success-message">@SuccessMessage</p>
+}
+
+@code {
+    private EquipmentCategoryUI Category = new EquipmentCategoryUI();
+    private string SuccessMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Check and initialize JSON file
+        JsonService.InitializeJsonFile();
+
+        // Set the next available ID
+        Category.EquipmentCategoryID = JsonService.GetNextCategoryID();
+    }
+
+    private void SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(Category.EquipmentCategoryName))
+        {
+            SuccessMessage = "Please enter a category name.";
+            return;
+        }
+
+        // Save to JSON
+        var newCategory = new EquipmentCategory(Category.EquipmentCategoryID, Category.EquipmentCategoryName);
+        JsonService.AddCategory(newCategory);
+
+        // Show success message
+        SuccessMessage = "Category added successfully!";
+
+        // Reset the form for the next entry
+        Category.EquipmentCategoryName = string.Empty;
+        Category.EquipmentCategoryID = JsonService.GetNextCategoryID();
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+</style>

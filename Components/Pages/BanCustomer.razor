@@ -1,0 +1,189 @@
+﻿@page "/ban-customer"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@using VillageRentals.CSFiles
+
+<h3>Ban Customer</h3>
+
+<div class="form-group">
+    <label>Customer:</label>
+    <select class="form-control" @bind="SelectedCustomerID" @bind:after="OnCustomerChanged">
+        <option value="0">Select a customer...</option>
+        @foreach (var customer in Customers)
+        {
+            <option value="@customer.CustomerID">@customer.CustomerID @customer.CustomerFirstName @customer.CustomerLastName</option>
+        }
+    </select>
+</div>
+<div class="form-group">
+    <label>Customer Phone Number:</label>
+    <input type="text" class="form-control" value="@(SelectedCustomer?.CustomerContactPhone ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Customer Email:</label>
+    <input type="text" class="form-control" value="@(SelectedCustomer?.CustomerEmail ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Customer banned description:</label>
+    <textarea class="form-control" @bind="SelectedCustomer.CustomerBannedDescription" rows="3"></textarea>
+</div>
+<div class="form-group">
+    <label>Customer Discount:</label>
+    <input type="text" class="form-control" value="@(SelectedCustomer != null ? $"{SelectedCustomer.CustomerDiscount}%" : "")" readonly />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="BanSelectedCustomer">Ban</button>
+    <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<Customer> Customers = new List<Customer>();
+    private int SelectedCustomerID { get; set; }
+    private CustomerManagementUI SelectedCustomer { get; set; } = new CustomerManagementUI();
+    private string Message = string.Empty;
+    private string MessageClass = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Load all customers
+        Customers = DataStore.Customers;
+    }
+
+    private void OnCustomerChanged()
+    {
+        if (SelectedCustomerID != 0)
+        {
+            var customer = DataStore.Customers.FirstOrDefault(c => c.CustomerID == SelectedCustomerID);
+            if (customer != null)
+            {
+                SelectedCustomer = new CustomerManagementUI(
+                    customer.CustomerID,
+                    customer.CustomerLastName,
+                    customer.CustomerFirstName,
+                    customer.CustomerContactPhone,
+                    customer.CustomerEmail,
+                    customer.CustomerIsBanned,
+                    customer.CustomerBannedDescription,
+                    customer.CustomerDiscount,
+                    customer.CustomerPassword
+                );
+            }
+        }
+        else
+        {
+            SelectedCustomer = new CustomerManagementUI();
+        }
+    }
+
+    private void BanSelectedCustomer()
+    {
+        if (SelectedCustomerID == 0)
+        {
+            Message = "Please select a customer to ban.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedCustomer.CustomerBannedDescription) || SelectedCustomer.CustomerBannedDescription.Length < 10)
+        {
+            Message = "Please provide a banned description with at least 10 characters.";
+            MessageClass = "error-message";
+            return;
+        }
+
+        // Automatically set CustomerIsBanned to true
+        SelectedCustomer.CustomerIsBanned = true;
+
+        // Update the customer
+        var updatedCustomer = new Customer(
+            SelectedCustomer.CustomerID,
+            SelectedCustomer.CustomerLastName,
+            SelectedCustomer.CustomerFirstName,
+            SelectedCustomer.CustomerContactPhone,
+            SelectedCustomer.CustomerEmail,
+            SelectedCustomer.CustomerIsBanned,
+            SelectedCustomer.CustomerBannedDescription,
+            SelectedCustomer.CustomerDiscount,
+            SelectedCustomer.CustomerPassword
+        );
+        JsonService.AddCustomer(updatedCustomer);
+
+        // Refresh the customers list
+        Customers = DataStore.Customers;
+
+        // Clear the selection
+        SelectedCustomerID = 0;
+        SelectedCustomer = new CustomerManagementUI();
+
+        // Show success message
+        Message = "Customer banned successfully!";
+        MessageClass = "success-message";
+    }
+
+    private void Cancel()
+    {
+        // Clear the selection
+        SelectedCustomerID = 0;
+        SelectedCustomer = new CustomerManagementUI();
+        Message = string.Empty;
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>

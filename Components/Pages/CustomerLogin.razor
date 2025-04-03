@@ -1,0 +1,113 @@
+﻿@page "/customer-login"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@using VillageRentals.CSFiles
+
+<h3>Customer Login</h3>
+
+<div class="form-group">
+    <label>Phone Number</label>
+    <input type="text" class="form-control" @bind="PhoneNumber" placeholder="(555) 555-1212" />
+</div>
+<div class="form-group">
+    <label>Password</label>
+    <input type="password" class="form-control" @bind="Password" placeholder="Enter your password" />
+</div>
+<button class="btn btn-primary" @onclick="SetCustomerLogin">Login</button>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+        <p class="error-message">@ErrorMessage</p>
+}
+
+<style>
+    .form-group {
+        margin-bottom: 15px;
+        width: 300px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>
+
+@code {
+    private string PhoneNumber { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Ensure JSON files are initialized
+        JsonService.InitializeJsonFile();
+
+        // Load customers from JSON
+        var customers = JsonService.ReadCustomers();
+
+        // Set default phone number and password to the first customer (if available)
+        var firstCustomer = customers.FirstOrDefault();
+        if (firstCustomer != null)
+        {
+            PhoneNumber = firstCustomer.CustomerContactPhone; // e.g., "(555) 555-1212"
+            Password = firstCustomer.CustomerPassword; // e.g., "123456"
+        }
+    }
+
+    private void SetCustomerLogin()
+    {
+        // Clear any previous error message
+        ErrorMessage = string.Empty;
+
+        // Validate inputs
+        if (string.IsNullOrWhiteSpace(PhoneNumber))
+        {
+            ErrorMessage = "Please enter a phone number.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessage = "Please enter a password.";
+            return;
+        }
+
+        // Read customers from JSON
+        var customers = JsonService.ReadCustomers();
+
+        // Find the customer with matching phone number and password
+        var customer = customers.FirstOrDefault(c => c.CustomerContactPhone == PhoneNumber && c.CustomerPassword == Password);
+
+        if (customer != null)
+        {
+            // If customer is banned, prevent login
+            if (customer.CustomerIsBanned)
+            {
+                ErrorMessage = "This customer is banned and cannot log in.";
+                return;
+            }
+
+            // Login successful, pass the customer's FirstName
+            AuthState.Login("Customer", customer.CustomerFirstName);
+            NavigationManager.NavigateTo("/customer-home");
+        }
+        else
+        {
+            // Login failed
+            ErrorMessage = "Invalid phone number or password.";
+        }
+    }
+}

@@ -1,0 +1,226 @@
+﻿@page "/my-order"
+@inject JsonService JsonService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using VillageRentals.CSFiles
+
+<h3>My Order</h3>
+
+<div class="form-group">
+    <label>Order ID:</label>
+    @if (CustomerOrders.Any())
+    {
+        <select class="form-control" @bind="SelectedOrderID" @bind:after="OnOrderChanged">
+            <option value="0">Select an order...</option>
+            @foreach (var order in CustomerOrders)
+            {
+                <option value="@order.OrderID">@order.OrderID</option>
+            }
+        </select>
+    }
+    else
+    {
+        <p class="error-message">No orders found for this customer.</p>
+    }
+</div>
+<div class="form-group">
+    <label>Equipment:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentID} {SelectedEquipment.EquipmentName}" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Description:</label>
+    <textarea class="form-control" value="@(SelectedEquipment?.EquipmentDescription ?? "")" readonly rows="3"></textarea>
+</div>
+<div class="form-group">
+    <label>Equipment Daily Rate:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment != null ? $"{SelectedEquipment.EquipmentDailyRate} UCD/Day" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Equipment Condition:</label>
+    <input type="text" class="form-control" value="@(SelectedEquipment?.EquipmentCondition ?? "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Rental Date:</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? SelectedOrder.OrderRentalDate.ToString("yyyy-MM-dd") : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Order Return Date (Planned):</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? SelectedOrder.OrderReturnDate.ToString("yyyy-MM-dd") : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Customer Discount:</label>
+    <input type="text" class="form-control" value="@(CustomerDiscount != null ? $"{CustomerDiscount}%" : "")" readonly />
+</div>
+<div class="form-group">
+    <label>Total Fee:</label>
+    <input type="text" class="form-control" value="@(SelectedOrder != null ? $"{SelectedOrder.TotalFee:F2} UCD" : "")" readonly />
+</div>
+<div class="button-group">
+    <button class="btn btn-primary" @onclick="ChangeDate" disabled="@(SelectedOrderID == 0 || Order.OrderIsClosed)">
+        @(Order.OrderIsClosed ? "Order Closed" : "Change Date")
+    </button>
+    <button class="btn btn-danger" @onclick="CancelOrder" disabled="@(SelectedOrderID == 0 || Order.OrderIsClosed)">
+        @(Order.OrderIsClosed ? "Order Closed" : "Cancel Order")
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <p class="@MessageClass">@Message</p>
+}
+
+@code {
+    private List<Order> CustomerOrders = new List<Order>();
+    private int SelectedOrderID { get; set; }
+    private Order SelectedOrder { get; set; }
+    private OrderUI Order { get; set; } = new OrderUI();
+    private Equipment SelectedEquipment { get; set; }
+    private int? CustomerDiscount { get; set; }
+    private string Message { get; set; } = string.Empty;
+    private string MessageClass { get; set; } = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Get the logged-in customer's ID
+        var customers = DataStore.Customers;
+        var customer = customers.FirstOrDefault(c => c.CustomerFirstName == AuthState.CustomerFirstName);
+        if (customer != null)
+        {
+            // Load orders for the current customer
+            CustomerOrders = DataStore.Orders
+                .Where(o => o.CustomerID == customer.CustomerID)
+                .ToList();
+
+            // Get the customer's discount
+            CustomerDiscount = customer.CustomerDiscount;
+        }
+    }
+
+    private void OnOrderChanged()
+    {
+        if (SelectedOrderID != 0)
+        {
+            SelectedOrder = DataStore.Orders.FirstOrDefault(o => o.OrderID == SelectedOrderID);
+            if (SelectedOrder != null)
+            {
+                SelectedEquipment = DataStore.Equipments.FirstOrDefault(e => e.EquipmentID == SelectedOrder.EquipmentID);
+                Order = new OrderUI(
+                    SelectedOrder.OrderID,
+                    SelectedOrder.CustomerID,
+                    SelectedOrder.EquipmentID,
+                    SelectedOrder.OrderPlaceDate,
+                    SelectedOrder.OrderRentalDate,
+                    SelectedOrder.OrderReturnDate,
+                    SelectedOrder.OrderReturnDateFinal,
+                    SelectedOrder.TotalFee,
+                    SelectedOrder.OrderIsClosed
+                );
+            }
+        }
+        else
+        {
+            SelectedOrder = null;
+            SelectedEquipment = null;
+            Order = new OrderUI();
+        }
+    }
+
+    private void ChangeDate()
+    {
+        if (SelectedOrderID != 0)
+        {
+            NavigationManager.NavigateTo($"/modify-order?orderId={SelectedOrderID}");
+        }
+    }
+
+    private async Task CancelOrder()
+    {
+        if (SelectedOrderID == 0)
+        {
+            return;
+        }
+
+        // Show confirmation dialog
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to cancel this order?");
+        if (confirmed)
+        {
+            // Remove the order
+            JsonService.RemoveOrder(SelectedOrderID);
+
+            // Refresh the orders list
+            var customers = DataStore.Customers;
+            var customer = customers.FirstOrDefault(c => c.CustomerFirstName == AuthState.CustomerFirstName);
+            if (customer != null)
+            {
+                CustomerOrders = DataStore.Orders
+                    .Where(o => o.CustomerID == customer.CustomerID)
+                    .ToList();
+            }
+
+            // Clear the selection
+            SelectedOrderID = 0;
+            SelectedOrder = null;
+            SelectedEquipment = null;
+            Order = new OrderUI();
+
+            // Show success message
+            Message = "Order cancelled successfully!";
+            MessageClass = "success-message";
+        }
+        // If not confirmed, do nothing (stay on the page)
+    }
+}
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 300px;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+    .success-message {
+        color: green;
+        margin-top: 1rem;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 1rem;
+    }
+</style>
