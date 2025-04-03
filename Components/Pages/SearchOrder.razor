@@ -66,7 +66,6 @@
     private Equipment SelectedEquipment { get; set; }
     private int? CustomerDiscount { get; set; }
 
-    // 动态类名，用于设置 Status 字段的字体颜色
     private string StatusClass => SelectedOrder != null ? (SelectedOrder.OrderIsClosed ? "status-closed" : "status-active") : "";
 
     protected override void OnInitialized()

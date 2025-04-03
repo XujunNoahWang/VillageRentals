@@ -22,7 +22,7 @@ public class Equipment : EquipmentCategory
     public Equipment(int equipmentID, int categoryID, string equipmentName, string equipmentDescription, double equipmentDailyRate, string equipmentCondition, bool isInInventory, bool isAvailable, string workingParts)
     {
         EquipmentID = equipmentID;
-        EquipmentCategoryID = categoryID; // 继承自 EquipmentCategory
+        EquipmentCategoryID = categoryID; 
         EquipmentName = equipmentName;
         EquipmentDescription = equipmentDescription;
         EquipmentDailyRate = equipmentDailyRate;
