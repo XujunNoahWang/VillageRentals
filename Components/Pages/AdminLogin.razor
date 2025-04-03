@@ -25,9 +25,8 @@
 @code {
     private void SetAdminLogin()
     {
-        // Preload all JSON data
-        JsonService.InitializeJsonFile();
-
         AuthState.Login("Admin");
+        DataStore.Initialize(JsonService); 
+        NavigationManager.NavigateTo("/admin-home");
     }
 }

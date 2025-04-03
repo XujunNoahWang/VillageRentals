@@ -102,6 +102,7 @@
 
             // Login successful, pass the customer's FirstName
             AuthState.Login("Customer", customer.CustomerFirstName);
+            DataStore.Initialize(JsonService);
             NavigationManager.NavigateTo("/customer-home");
         }
         else

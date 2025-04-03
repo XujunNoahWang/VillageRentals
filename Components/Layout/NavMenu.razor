@@ -2,7 +2,7 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/" @onclick="Logout">Village Rentals</a>
+        <span class="navbar-brand" >Village Rentals</span>
     </div>
 </div>
 
@@ -27,34 +27,22 @@
                 <span class="nav-title">Equipment Management</span>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="add-equipment-category">
-                    Add Equipment Category
-                </NavLink>
+                <NavLink class="nav-link" href="add-equipment-category">Add Equipment Category</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="update-equipment-category">
-                    Update Equipment Category
-                </NavLink>
+                <NavLink class="nav-link" href="update-equipment-category">Update Equipment Category</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="add-equipment">
-                    Add Equipment
-                </NavLink>
+                <NavLink class="nav-link" href="add-equipment">Add Equipment</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="remove-equipment">
-                    Remove Equipment
-                </NavLink>
+                <NavLink class="nav-link" href="update-equipment">Update Equipment</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="update-equipment">
-                    Update Equipment
-                </NavLink>
-            </div>
+                <NavLink class="nav-link" href="remove-equipment">Remove Equipment</NavLink>
+            </div>            
             <div class="sub-item">
-                <NavLink class="nav-link" href="search-equipment">
-                    Search for Equipment
-                </NavLink>
+                <NavLink class="nav-link" href="search-equipment">Search for Equipment</NavLink>
             </div>
 
             <!-- Customer Management -->
@@ -62,29 +50,19 @@
                 <span class="nav-title">Customer Management</span>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="add-customer">
-                    Add Customer
-                </NavLink>
+                <NavLink class="nav-link" href="add-customer">Add Customer</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="remove-customer">
-                    Remove Customer
-                </NavLink>
+                <NavLink class="nav-link" href="update-customer">Update Customer</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="update-customer">
-                    Update Customer
-                </NavLink>
+                <NavLink class="nav-link" href="remove-customer">Remove Customer</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="search-customer">
-                    Search for Customer
-                </NavLink>
+                <NavLink class="nav-link" href="search-customer">Search for Customer</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="ban-customer">
-                    Ban Customer
-                </NavLink>
+                <NavLink class="nav-link" href="ban-customer">Ban Customer</NavLink>
             </div>
 
             <!-- Order Management -->
@@ -92,14 +70,10 @@
                 <span class="nav-title">Order Management</span>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="close-order">
-                    Close Order
-                </NavLink>
+                <NavLink class="nav-link" href="close-order">Close Order</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="search-order">
-                    Search for Order
-                </NavLink>
+                <NavLink class="nav-link" href="search-order">Search for Order</NavLink>
             </div>
 
             <!-- Report Management -->
@@ -107,24 +81,16 @@
                 <span class="nav-title">Report Management</span>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="report-by-date">
-                    Report by Date
-                </NavLink>
+                <NavLink class="nav-link" href="report-by-date">Report by Date</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="report-by-customer">
-                    Report by Customer
-                </NavLink>
+                <NavLink class="nav-link" href="report-by-customer">Report by Customer</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="report-by-category">
-                    Report by Category
-                </NavLink>
+                <NavLink class="nav-link" href="report-by-category">Report by Category</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="customize-report">
-                    Customize Report
-                </NavLink>
+                <NavLink class="nav-link" href="customize-report">Customize Report</NavLink>
             </div>
         }
         else if (AuthState.Role == "Customer")
@@ -134,14 +100,18 @@
                 <span class="nav-title">Order Management</span>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="new-order">
-                    New Order
-                </NavLink>
+                <NavLink class="nav-link" href="new-order">New Order</NavLink>
             </div>
             <div class="sub-item">
-                <NavLink class="nav-link" href="my-order">
-                    My Order
-                </NavLink>
+                <NavLink class="nav-link" href="my-order">My Order</NavLink>
+            </div>
+        }
+
+        <!-- Logout button for all logged-in users -->
+        @if (AuthState.IsLoggedIn)
+        {
+            <div class="nav-item logout-item">
+                <button class="logout-btn" @onclick="Logout">Logout</button>
             </div>
         }
     </nav>
@@ -154,14 +124,14 @@
 
     .nav-scrollable {
         color: white;
-        height: 100vh; /* Restore height for full viewport */
-        width: 250px; /* Adjusted width to accommodate longer text */
-        overflow-x: hidden; /* Prevent horizontal scrollbar */
+        height: 100vh;
+        width: 250px;
+        overflow-x: hidden;
     }
 
     .nav-item {
         padding-top: 1.5rem;
-        padding-left: 1rem; /* Keep left padding as specified */
+        padding-left: 1rem;
     }
 
     .nav-title {
@@ -171,23 +141,23 @@
 
     .nav-link {
         color: white !important;
-        white-space: nowrap; /* Prevent text wrapping */
-        overflow: hidden; /* Hide overflow text */
-        text-overflow: ellipsis; /* Show ellipsis for overflow text */
-        text-decoration: none; /* Remove underline by default */
-        background: none !important; /* Remove background */
-        border: none !important; /* Remove border */
-        padding: 0; /* Remove all padding */
-        line-height: 1; /* Set line-height to 1 to match font-size */
-        margin: 0; /* Remove all margins */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-decoration: none;
+        background: none !important;
+        border: none !important;
+        padding: 0;
+        line-height: 1;
+        margin: 0;
     }
 
         .nav-link:hover {
-            text-decoration: underline; /* Add underline on hover */
+            text-decoration: underline;
         }
 
         .nav-link.active {
-            font-weight: bold; /* Bold font when active */
+            font-weight: bold;
         }
 
     .navbar-brand {
@@ -195,26 +165,49 @@
     }
 
     .sub-item .nav-link {
-        padding-left: 2rem; /* Indent sub-items */
-        line-height: 24px; /* Set line-height to 1 to match font-size */
+        padding-left: 2rem;
+        line-height: 24px;
     }
+
+    .logout-item {
+        padding-top: 2rem;
+        padding-bottom: 1rem;
+    }
+
+    .logout-btn {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 80%;
+        text-align: center;
+    }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
 </style>
 
 @code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
     private void Logout()
     {
-        AuthState.Logout();
+        AuthState.Logout(); 
+        DataStore.Clear();  
+        NavigationManager.NavigateTo("/", forceLoad: true); 
     }
 
     protected override void OnInitialized()
     {
-        // Check state on component initialization
         StateHasChanged();
     }
 
     protected override void OnAfterRender(bool firstRender)
     {
-        // Check state after each render
         StateHasChanged();
     }
 }

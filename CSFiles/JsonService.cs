@@ -100,7 +100,7 @@ public class JsonService
         }
 
         // Load data into DataStore
-        DataStore.LoadData(this);
+        DataStore.Initialize(this);
     }
 
     public List<EquipmentCategory> ReadCategories()
