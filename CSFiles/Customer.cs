@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace VillageRentals.CSFiles;
 
-// Customer.cs
 public class Customer
 {
     public int CustomerID { get; set; }

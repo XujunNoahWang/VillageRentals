@@ -65,7 +65,7 @@
         Customer.CustomerID = JsonService.GetNextCustomerID();
     }
 
-    private void FormatPhoneNumber(ChangeEventArgs e)
+	private void FormatPhoneNumber(ChangeEventArgs e) // When the input changes and the formatting is correct
     {
         string input = e.Value?.ToString()?.Replace("(", "").Replace(")", "").Replace(" ", "").Replace("-", "");
         if (string.IsNullOrEmpty(input) || input.Length != 10 || !input.All(char.IsDigit))
